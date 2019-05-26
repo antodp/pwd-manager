@@ -1,0 +1,8 @@
+SERVICE_TITLE: <description>
+notes: <notes> // or other meta-data
+name: <username>
+pass: <pass>
+pin: <##>
+passphrase: <passphrase>
+##: <secret> // this will be encrypted (secrets needs to be written between'<' and '>' characters)
+

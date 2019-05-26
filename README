@@ -1,0 +1,65 @@
+# pwd-manager: A simple secrets file encryption tool
+
+Antonio Della Porta - 2018
+
+[1] Cifratura dei segreti
+
+Ogni volta che viene avviato il tool in modalità di cifratura, il tool provvede
+a trovare all'interno del file fornito in input i campi da cifrare (contrassegnati dall'etichetta '##:', vedi Templates/template.txt). Una volta 
+individuati i campi provvederà ad eseguire i seguenti passi per ogni campo:
+	
+	a. Generazione di una chiave ausiliaria (unica per ogni campo, vedi 
+	   [Dettagli Tecnici])
+	b. Generazione di un digest (HMAC-SHA256) per garantire l'integrità del
+	   campo in chiaro nella fase di decifratura
+	c. Cifratura del campo usando un cifrario di tipo Vigenere
+	
+
+[2] Decifratura dei segreti
+
+Ogni volta che viene avviato il tool in modalità di decifratura, quest'ultimo
+provvede a ricercare all'interno del file fornito in input i campi da decifrare
+(contrassegnati dall'etichetta '##:', vedi Templates/template.txt). Una volta individuati i campi provvederà ad eseguire i seguenti passo per ogni campo:
+	
+	a. Recupero della chiave univoca
+	b. Decifratura del campo cifrato (cifrario di tipo Vigenere)
+	c. Verifica dell'integrità del dato in chiaro (HMAC-SHA256)
+
+
+[3] Dettagli Tecnici
+
+[3.1] Cifratura
+I passi descritti in [1] saranno qui descritti in dettaglio.
+
+[3.1a] Generazione chiave ausiliaria
+Ogni volta che viene richiesta la generazione di una chiave ausiliaria a partire da una chiave k fornita dall'utente, i passi che si seguono sono:
+	
+	a. Generazione di una nonce da 32 byte pseudocasuale estratta da /dev/urandom (salt)
+	b. Conversione dei byte generati al passo (a) in una stringa (Base64)
+	c. La chiave k (chiave segreta dell'utente) viene cifrata attraverso un cifrario di tipo Vigenere usando come chiave la stringa ottenuta al passo 
+	   (b)
+
+[3.1b] Generazione digest
+In questa fase viene creato un digest (HMAC-256) a partire dal valore del campo da cifrare e con l'utilizzo della chiave ottenuta dal procedimento descritto
+in [3.1]. Questo digest (insieme al salt di cui in [3.1a]) viene salvato in un file nascosto di nome '.pwd-manager' e servirà successivamente per decifrare 
+il file che contiene i 'secrets' cifrati.
+
+[3.1c] Cifratura del campo
+In questa fase viene applicata la cifratura con un cifrario di tipo Vigenere. Tuttavia il dizionario utilizzato consiste di tutti i caratteri ASCII (inclusi i simboli) vista l'applicazione che trova il tool (ci si aspetta che password/codici non scelti dall'utente possano contenere simboli o caratteri speciali).
+
+
+[4] Esempi di comandi
+Di seguito vengono riportati esempi di comandi da poter eseguire (per tutte le opzioni disponibili consultare la sezione --help del tool):
+	
+	# Cifra i campi contrassegnati dall'etichetta '##:' contenuti nel file plaintext_file.txt usando la chiave <key>
+	python pwdmanager.py -e -s plaintext_file.txt -k <key>
+
+	# Decifra i campi contrassegnati dall'etichetta '##:' contenuti nel file secrets_file.txt usando la chiave <key>
+	python pwdmanager.py -d -s secrets_file.txt -k <key>
+
+	# Cifra i campi contrassegnati dall'etichetta '##:' contenuti nel file plaintext_file.txt usando una chiave generata randomicamente (/dev/urandom) di lunghezza 15
+	python pwdmanager.py -e -s plaintext_file.txt -r 15
+
+	# Cifra i campi contrassegnati dall'etichetta '##:' contenuti nel file plaintext_file.txt usando la chiave <key> e salva il file di output con il nome del file specificato da <path>
+	python pwdmanager.py -e -s plaintext_file.txt -p <path> -k <key>
+
